@@ -361,3 +361,36 @@ export function createIcaclsResetCommand(
     display: formatIcaclsResetCommand(targetPath, opts),
   };
 }
+
+export async function grantAppContainerAccess(
+  targetPath: string,
+  containerSid: string,
+  opts: { isDir: boolean; rights?: "R" | "RW" | "F"; exec?: ExecFn },
+): Promise<void> {
+  const exec = opts.exec ?? runExec;
+  const rights = opts.rights ?? "R";
+  // Map shorthand to icacls permission strings.
+  const icaclsRights = rights === "RW" ? "M" : rights;
+  const inheritance = opts.isDir ? `(OI)(CI)` : "";
+  const grantExpr = `*${containerSid}:${inheritance}${icaclsRights}`;
+  const { stdout, stderr } = await exec("icacls", [targetPath, "/grant:r", grantExpr]);
+  const output = `${stdout}\n${stderr}`.toLowerCase();
+  if (output.includes("failed") || output.includes("error")) {
+    throw new Error(
+      `grantAppContainerAccess: icacls failed for ${targetPath}: ${stderr || stdout}`,
+    );
+  }
+}
+
+export async function revokeAppContainerAccess(
+  targetPath: string,
+  containerSid: string,
+  opts?: { exec?: ExecFn },
+): Promise<void> {
+  const exec = opts?.exec ?? runExec;
+  try {
+    await exec("icacls", [targetPath, "/remove:g", `*${containerSid}`]);
+  } catch {
+    // Treat "SID not present" as success — revoke is idempotent.
+  }
+}

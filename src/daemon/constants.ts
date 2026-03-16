@@ -111,3 +111,7 @@ export function formatNodeServiceDescription(params?: { version?: string }): str
   }
   return `OpenClaw Node Host (v${version})`;
 }
+
+export const APPCONTAINER_PROFILE_PREFIX = "OpenClaw.Workspace";
+export const APPCONTAINER_ENV_MARKER = "OPENCLAW_APPCONTAINER";
+export const APPCONTAINER_BROKER_PIPE_ENV = "OPENCLAW_BROKER_PIPE";
